@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+'''
+A Python implementation of a TFTP server.
+
+All tftpud code licensed under the MIT License: http://mit-licence.org
+'''
+from tftpud.server import server
+import argparse
+import sys
+import os
+
+def logFuncCallback(msg):
+    '''A simple logging function - print the message to stdout'''
+    print msg
+        
+def mainTftpServer(argv):
+    
+    # Parse the command line options
+    parser = argparse.ArgumentParser(description='A TFTP server.')
+    parser.add_argument('--dir', dest='workingDir', action='store', help='the TFTP server working directory')
+    parser.add_argument('--port', dest='port', action='store', help='the port the TFTP server will listen on')
+    parser.add_argument('--address', dest='ipAddress', required=True, action='store', help='the IP address of the TFTP server')
+    
+    opts = parser.parse_args(argv[1:])
+    
+    serverCfg = server.ServerConfig(opts.ipAddress)
+    serverCfg.logger = logFuncCallback
+    
+    if opts.port:
+        serverCfg.listeningPort = int(opts.port)
+        
+    if opts.workingDir:
+        os.chdir(opts.workingDir)
+    
+    theServer = server.Server(serverCfg)
+    try:
+        theServer.join()
+    except:
+        print 'closing'
+        theServer.stopServer()
+
+if __name__ == '__main__':
+    mainTftpServer(sys.argv)

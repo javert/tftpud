@@ -19,8 +19,13 @@ class TftpOperation(threading.Thread):
         threading.Thread.__init__(self)
         self.log = []
         
-    def addLogMsg(self, msg):
-        self.log.append(str(datetime.now()) + ': ' + msg)
+    def addLogMsg(self, msg, timestamp = True, newLine = True):
+        if timestamp:
+            msg = str(datetime.now()) + ': ' + msg
+        if newLine or len(self.log) == 0:
+            self.log.append(msg)
+        else:
+            self.log[-1] += msg
         
     def processLogMessages(self, logFunc):
         for msg in self.log:

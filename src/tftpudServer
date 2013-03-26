@@ -36,7 +36,7 @@ def mainTftpServer(argv):
     try:
         theServer.join()
     except:
-        print 'closing'
+        print '\nclosing'
         theServer.stopServer()
 
 if __name__ == '__main__':

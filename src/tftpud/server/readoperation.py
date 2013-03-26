@@ -170,7 +170,7 @@ class ReadOperation(tftpoperation.TftpOperation):
                     
                     blockNum += 1
                     if blockNum > 0xffff:
-                        blockNum = 1 # or reset to zero?
+                        blockNum = 0 # or reset to 1?
                         
                 # This block group has been sent. Get the next.
                 if finalPass:

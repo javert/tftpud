@@ -4,7 +4,12 @@ Created on 28 Dec 2012
 @author: huw
 '''
 import unittest
-import os
+
+# Import the project root and set this to be the current working directory
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
 from tftpud.server import writeoperation
 from tftpud import tftpmessages
 import mocksocket
@@ -18,14 +23,14 @@ class TestServerWrite(unittest.TestCase):
         
     def setupWrq(self, fileName='MyFileToWrite.txt', mode='octet', rmFile=True, options = None):
         pkt = tftpmessages.WriteRequest()
-        pkt.fileName = fileName
+        pkt.fileName = os.path.join('data', fileName)
         pkt.mode = mode
         if options is not None:
             pkt.options = options
         
         # remove the file first to avoid the already exists error.
-        if rmFile and os.path.isfile(fileName):
-            os.remove(fileName)
+        if rmFile and os.path.isfile(pkt.fileName):
+            os.remove(pkt.fileName)
         
         self.uut = writeoperation.WriteOperation(self.s, self.clientAddr, pkt)
 
@@ -79,7 +84,8 @@ class TestServerWrite(unittest.TestCase):
         # Check that only one rx operation was attempted
         self.assertEqual(self.s.countRecv, 1, 'Rx count')
         
-        self.assertTrue(os.path.isfile('SingleTransfer.txt'), 'file has been written')
+        self.assertTrue(os.path.isfile(
+                                       os.path.join('data', 'SingleTransfer.txt')), 'file has been written')
         
     def testFourBlockTransfer(self):
         # Set up the data that will be received.
@@ -108,7 +114,7 @@ class TestServerWrite(unittest.TestCase):
         # Check that 4 rx operations were attempted (the 4 ack)
         self.assertEqual(self.s.countRecv, 4, 'Rx count')
         
-        self.assertTrue(os.path.isfile('FourBlockFile.txt'), 'File not written')
+        self.assertTrue(os.path.isfile(os.path.join('data','FourBlockFile.txt')), 'File not written')
         
     def testIncorrectSourcePort(self):
         # Set up the data that will be received.
@@ -161,7 +167,7 @@ class TestServerWrite(unittest.TestCase):
             rxData.append( (dataPacket.pack(), self.clientAddr) )
             
         # Add the final wrapped packet
-        dataPacket.blockNum = 1
+        dataPacket.blockNum = 0
         dataPacket.dataBlock = 'abc'
         rxData.append( (dataPacket.pack(), self.clientAddr) )
         
@@ -177,7 +183,7 @@ class TestServerWrite(unittest.TestCase):
         self.assertEqual(lastPacket[0], chr(0), 'opcode msb')
         self.assertEqual(lastPacket[1], chr(tftpmessages.OPCODE_ACK), 'opcode = ACK')
         self.assertEqual(lastPacket[2], chr(0), 'wrapped block number msb')
-        self.assertEqual(lastPacket[3], chr(1), 'wrapped block number')
+        self.assertEqual(lastPacket[3], chr(0), 'wrapped block number')
         
         # Check the packet before that as the last in the range
         lastPacket = self.s.sentData[-2][0]

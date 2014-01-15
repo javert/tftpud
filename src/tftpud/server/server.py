@@ -2,6 +2,8 @@
 Created on 16 Dec 2012
 
 @author: huw
+
+All tftpud code licensed under the MIT License: http://mit-licence.org
 '''
 import threading
 import socket
@@ -9,7 +11,7 @@ import random
 
 from .. import tftpmessages
 import readoperation
-from tftpud.server import writeoperation
+import writeoperation
 
 class ServerConfig:
     '''Configuration data for the TFTP Server.
@@ -56,20 +58,30 @@ class Server(object):
         
         if runNow:
             # Start the server thread.
-            self.serverThread.start()
-        
-    def join(self):
-        while self.serverThread.is_alive():
-            self.serverThread.join(2) #  2 second timeout to allow signals
+            self.startServer()
             
-    def runServer(self):
-        '''Run the server object, listening for TFTP server requests.'''
-        # Allocate a UDP socket
+    def startServer(self):
+        '''Start the server'''
+        
+        # Create the socket objects. If there is problem here it will throw
+        # an exception in the calling thread rather than inside the server
+        # thread.
         self.listenerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listenerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.listenerSocket.bind((self.config.hostIpAddress, self.config.listeningPort))
         
         self.listenerSocket.settimeout(2) # 2 second timeout
+        
+        # Now start the thread
+        self.serverThread = threading.Thread(target=self.runServer)
+        self.serverThread.start()
+        
+    def join(self):
+        while self.serverThread and self.serverThread.is_alive():
+            self.serverThread.join(2) #  2 second timeout to allow signals
+            
+    def runServer(self):
+        '''Run the server object, listening for TFTP server requests.'''
         
         while not self.stopThread:
             try:

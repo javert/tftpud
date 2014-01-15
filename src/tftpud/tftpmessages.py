@@ -2,6 +2,8 @@
 Created on 26 Dec 2012
 
 @author: huw
+
+All tftpud code licensed under the MIT License: http://mit-licence.org
 '''
 import struct
 

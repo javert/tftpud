@@ -2,6 +2,8 @@
 Created on 26 Dec 2012
 
 @author: huw
+
+All tftpud code licensed under the MIT License: http://mit-licence.org
 '''
 
 import threading
@@ -18,19 +20,29 @@ class TftpOperation(threading.Thread):
         '''
         threading.Thread.__init__(self)
         self.log = []
+        self.logMutex = threading.Lock()
         
-    def addLogMsg(self, msg, timestamp = True, newLine = True):
+    def addLogMsg(self, msg, timestamp = True, newLine = True, overwrite = False):
         if timestamp:
             msg = str(datetime.now()) + ': ' + msg
-        if newLine or len(self.log) == 0:
-            self.log.append(msg)
-        else:
-            self.log[-1] += msg
+            
+        with self.logMutex:
+            if overwrite:
+                # prepend a \r character
+                self.log.append('\r' + msg)
+            elif newLine or len(self.log) == 0:
+                self.log.append(msg)
+            else:
+                self.log[-1] += msg
         
     def processLogMessages(self, logFunc):
-        for msg in self.log:
+        tmpLog = []
+        with self.logMutex:
+            tmpLog = self.log
+            self.log = []
+            
+        for msg in tmpLog:
             logFunc(msg)
-        self.log = []
         
     def run(self):
         try:

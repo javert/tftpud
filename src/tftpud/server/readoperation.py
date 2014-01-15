@@ -1,7 +1,5 @@
 '''
-Created on 26 Dec 2012
-
-@author: huw
+All tftpud code licensed under the MIT License: http://mit-licence.org
 '''
 import os
 import socket # for timeout exception
@@ -56,6 +54,8 @@ class ReadOperation(tftpoperation.TftpOperation):
         
         self.fileSource = None
         
+        self.fileSize = 0 # bytes
+        
         # Import options
         self.readOpts = pkt.options
             
@@ -85,8 +85,7 @@ class ReadOperation(tftpoperation.TftpOperation):
                         if int(val) == 0:
                             # Write the actual file size back to the client in the
                             # OACK,
-                            s = os.stat(self.fileName)
-                            oack.options[name] = str( s.st_size )
+                            oack.options[name] = str( self.fileSize )
             except:
                 # Send an error packet and bail out with an exception.
                 self.sendErrorPkt(tftpmessages.ERR_OPTION_FAIL, 'Failed to process RRQ options')
@@ -119,7 +118,7 @@ class ReadOperation(tftpoperation.TftpOperation):
         The main thread function for the Server Read Operation.
         Split the requested file into blocks, then send each one in lock-step.
         '''
-        self.addLogMsg('RRQ :' + str(self.clientAddr) + ', ' + self.fileName + ' , options : ' + str(self.readOpts))
+        self.addLogMsg('RRQ: ' + str(self.clientAddr) + ', ' + self.fileName + ' , options : ' + str(self.readOpts))
         
         # Ensure the input packet mode string is acceptable
         if self.mode.lower() != 'octet':
@@ -131,6 +130,10 @@ class ReadOperation(tftpoperation.TftpOperation):
             # Send back an error packet
             self.sendErrorPkt(tftpmessages.ERR_FILE_NOT_FOUND, 'No such file: ' + self.fileName)
         else:
+            # Get the file size for progress reporting
+            stat = os.stat(self.fileName)
+            self.fileSize = stat.st_size
+            
             # Check the options (including the OACK/ACK exchange if required)
             self.processOptions()
             
@@ -139,12 +142,15 @@ class ReadOperation(tftpoperation.TftpOperation):
             self.generateBlocks()
             
             blockNum = 1
+            numBlocks= 0 # used only for log output
             finished = False
             finalPass = False
-            lastBlockSize = 0
+            prevBlockSize = 0
+            bytesSent = 0
+            
             while not finished:
                 for block in self.blocks:
-                    lastBlockSize = len(block)
+                    prevBlockSize = len(block)
                     
                     if self.abortRequested:
                         raise Exception('Operation aborted')
@@ -169,21 +175,24 @@ class ReadOperation(tftpoperation.TftpOperation):
                             raise Exception(errMsg)
                     
                     blockNum += 1
+                    numBlocks += 1
                     if blockNum > 0xffff:
-                        blockNum = 0 # or reset to 1?
+                        blockNum = 0 # wrap around to zero
                         
+                    bytesSent += len(block)
+                    
                 # This block group has been sent. Get the next.
                 if finalPass:
                     finished = True
+                    self.addLogMsg('RRQ operation complete in %d blocks' % numBlocks)
                 else:
                     self.generateBlocks()
                     if len(self.blocks) == 0:
                         finalPass = True
-                        if lastBlockSize == self.blockSize:
+                        if prevBlockSize == self.blockSize:
                             # Add the one final (empty) block to terminate the operation
                             self.blocks.append('')
                     
-        self.addLogMsg('RRQ operation complete')
             
     def generateBlocks(self):
         # Get up to 200 blocks

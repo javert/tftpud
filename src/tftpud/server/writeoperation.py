@@ -2,6 +2,8 @@
 Created on 31 Dec 2012
 
 @author: huw
+
+All tftpud code licensed under the MIT License: http://mit-licence.org
 '''
 import os
 import socket
@@ -72,9 +74,7 @@ class WriteOperation(tftpoperation.TftpOperation):
             self.f.close()
             self.f = None
         except Exception, e:
-            self.addLogMsg(str(e))
-        finally:
-            self.addLogMsg('WRQ processing complete')                
+            self.addLogMsg(str(e))            
         
     def openFileForWriting(self):
         '''Check that the file name is ok for writing.'''
@@ -148,6 +148,7 @@ class WriteOperation(tftpoperation.TftpOperation):
         # Wait for the next data block
         fail = False
         complete = False
+        numBlocks = 0
         while not fail and not complete:
             dataPkt = self.waitForData()
             if dataPkt is not None:
@@ -158,6 +159,7 @@ class WriteOperation(tftpoperation.TftpOperation):
                     self.blockNum = dataPkt.blockNum
                     self.blocks.append(dataPkt.dataBlock)
                     self.sendAckPkt(self.blockNum)
+                    numBlocks += 1
                     
                     if len(dataPkt.dataBlock) < self.blockSize:
                         complete = True
@@ -174,6 +176,11 @@ class WriteOperation(tftpoperation.TftpOperation):
             else:
                 # No data packet received in timeout (and retries).
                 fail = True
+                
+        if complete:
+            self.addLogMsg('WRQ operation complete in %d blocks' % numBlocks)
+        else:
+            self.addLogMsg('WRQ operation failed')
             
     def waitForData(self):
         '''Wait for a data packet to be received, and return it.

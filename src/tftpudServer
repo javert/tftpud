@@ -11,7 +11,10 @@ import os
 
 def logFuncCallback(msg):
     '''A simple logging function - print the message to stdout'''
-    print msg
+    if msg.startswith('\r'):
+        print msg,
+    else:
+        print msg
         
 def mainTftpServer(argv):
     

@@ -3,8 +3,8 @@
 from distutils.core import setup
 
 setup(name='tftpud',
-      version='0.1',
-      description='A TFTP server implemented in pure python.',
+      version='1.0',
+      description='A TFTP library implemented in pure Python. Also includes a command line server: tftpudServer.',
       author='Huw Lewis',
       author_email='huw.lewis2409@gmail.com',
       packages=['tftpud', 'tftpud.server'],

@@ -4,9 +4,17 @@ Created on 28 Dec 2012
 @author: huw
 '''
 import unittest
+
+# Import the project root and set this to be the current working directory
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
+
 from tftpud.server import readoperation
 from tftpud import tftpmessages
 import mocksocket
+
 
 class TestServerRead(unittest.TestCase):
 
@@ -17,7 +25,7 @@ class TestServerRead(unittest.TestCase):
         
     def setupRrq(self, fileName='MyFile.txt', mode='octet', options = None):
         pkt = tftpmessages.ReadRequest()
-        pkt.fileName = fileName
+        pkt.fileName = os.path.join('data', fileName)
         pkt.mode = mode
         if options is not None:
             pkt.options = options
@@ -185,7 +193,7 @@ class TestServerRead(unittest.TestCase):
         self.assertEqual(lastPacket[0], chr(0), 'opcode msb')
         self.assertEqual(lastPacket[1], chr(tftpmessages.OPCODE_DATA), 'opcode = Datablock')
         self.assertEqual(lastPacket[2], chr(0), 'wrapped block number msb')
-        self.assertEqual(lastPacket[3], chr(1), 'wrapped block number')
+        self.assertEqual(lastPacket[3], chr(0), 'wrapped block number')
         
         # Check the packet before that as the last in the range
         lastPacket = self.s.sentData[-2][0]

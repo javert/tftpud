@@ -11,15 +11,15 @@ Extensions implemented:
 
 Licensed under the MIT License (see LICENSE) file.
 
+Python libraries to implement TFTP:
+tftpud
+tftpud.server
+
 Scripts:
 tftpudServer - runs a TFTP server from the command line.
 
-Packages:
-tftpud - common
-tftpud.server
-test - unit tests
-
 Future development ideas:
+ - support IPv6
  - implement netascii mode
- - complete command line client
+ - command line TFTP client
  - QT GUI for the client

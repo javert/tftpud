@@ -12,8 +12,8 @@ Extensions implemented:
 Licensed under the MIT License (see LICENSE) file.
 
 Python libraries to implement TFTP:
-tftpud
-tftpud.server
+ - tftpud
+ - tftpud.server
 
 Scripts:
 tftpudServer - runs a TFTP server from the command line.

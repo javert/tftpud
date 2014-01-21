@@ -36,7 +36,7 @@ class TftpOperation(threading.Thread):
                 self.log[-1] += msg
         
     def processLogMessages(self, logFunc):
-        tmpLog = []
+        tmpLog = None
         with self.logMutex:
             tmpLog = self.log
             self.log = []

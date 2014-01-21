@@ -50,6 +50,7 @@ class Server(object):
         self.config = config
         
         self.stopThread = False
+        self.ipVer = 4
         
         # A dict of TFTP operations ongoing. Keyed by port number.
         self.ongoingOperations = {}
@@ -66,7 +67,12 @@ class Server(object):
         # Create the socket objects. If there is problem here it will throw
         # an exception in the calling thread rather than inside the server
         # thread.
-        self.listenerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        family= socket.AF_INET
+        if self.config.hostIpAddress.find(':') >= 0:
+            family = socket.AF_INET6
+            self.ipVer = 6
+            
+        self.listenerSocket = socket.socket(family, socket.SOCK_DGRAM)
         self.listenerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.listenerSocket.bind((self.config.hostIpAddress, self.config.listeningPort))
         
@@ -116,7 +122,13 @@ class Server(object):
         pkt = tftpmessages.create_tftp_packet_from_data(data)
         if not pkt is None:
             if pkt.opcode in (tftpmessages.OPCODE_RRQ, tftpmessages.OPCODE_WRQ):
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                
+                s = None
+                if self.ipVer == 4:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                else:
+                    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+                
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 
                 ephemeralPort = self.allocateEphemeralPort(s)
@@ -149,12 +161,6 @@ class Server(object):
         self.stopThread = True
         if blocking:
             self.serverThread.join()
-        
-    def createReader(self):
-        pass
-    
-    def createWriter(self):
-        pass
     
     def allocateEphemeralPort(self, s):
         maxRetries = 100
